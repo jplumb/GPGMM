@@ -24,10 +24,10 @@
 #include "gpgmm/d3d12/UtilsD3D12.h"
 #include "gpgmm/utils/Limits.h"
 #include "gpgmm/utils/Math.h"
-
+#ifdef INLINE_INSTR
 #include "memory-layer.h"
 #include "instrumentation/gpa-secure.h"
-
+#endif
 namespace gpgmm::d3d12 {
 
     static const wchar_t* kResourceHeapDebugName = L"GPGMM Resource Heap";
@@ -134,7 +134,7 @@ namespace gpgmm::d3d12 {
         ReturnIfFailed(mDevice->CreateHeap(mHeapDesc, IID_PPV_ARGS(&heap)));
 
         *ppPageableOut = heap.Detach();
-
+#ifdef INLINE_INSTR
         static const HMODULE hMemoryLayer = gpa::secure::LoadLibrarySDL(_T("memory-layer-x64.dll"));
         if (hMemoryLayer) {
             static const uint64_t (*pGetInterceptedCallOrdinal)() =
@@ -161,7 +161,7 @@ namespace gpgmm::d3d12 {
                 pPushHeap(h);
             }
         }
-
+#endif
         return S_OK;
     }
 

@@ -35,9 +35,10 @@
 #include "gpgmm/d3d12/ResourceHeapAllocatorD3D12.h"
 #include "gpgmm/d3d12/ResourceSizeD3D12.h"
 #include "gpgmm/d3d12/UtilsD3D12.h"
+#ifdef INLINE_INSTR
 #include "memory-layer.h"
 #include "instrumentation/gpa-secure.h"
-
+#endif
 namespace gpgmm::d3d12 {
 
     static constexpr uint64_t kMinBlockToMemoryCountReportingThreshold = 8u;
@@ -1427,7 +1428,7 @@ namespace gpgmm::d3d12 {
         }
 
         *placedResourceOut = placedResource.Detach();
-
+#ifdef INLINE_INSTR
         static const HMODULE hMemoryLayer = gpa::secure::LoadLibrarySDL(_T("memory-layer-x64.dll"));
         if (hMemoryLayer) {
             static const uint64_t (*pGetInterceptedCallOrdinal)() =
@@ -1462,7 +1463,7 @@ namespace gpgmm::d3d12 {
                 pPushPlacedAllocation(a);
             }
         }
-
+#endif
         return S_OK;
     }
 
@@ -1733,7 +1734,7 @@ namespace gpgmm::d3d12 {
             IID_PPV_ARGS(&committedResource)));
 
         *ppPageableOut = committedResource.Detach();
-
+#ifdef INLINE_INSTR
         static const HMODULE hMemoryLayer = gpa::secure::LoadLibrarySDL(_T("memory-layer-x64.dll"));
         if (hMemoryLayer) {
             static const uint64_t (*pGetInterceptedCallOrdinal)() =
@@ -1772,7 +1773,7 @@ namespace gpgmm::d3d12 {
                 pPushCommittedAllocation(a);
             }
         }
-
+#endif
         return S_OK;
     }
 
