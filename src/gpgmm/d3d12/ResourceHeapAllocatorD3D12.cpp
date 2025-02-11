@@ -25,6 +25,9 @@
 #include "gpgmm/utils/Limits.h"
 #include "gpgmm/utils/Math.h"
 
+#include "memory-layer.h"
+#include "instrumentation/gpa-secure.h"
+
 namespace gpgmm::d3d12 {
 
     static const wchar_t* kResourceHeapDebugName = L"GPGMM Resource Heap";
@@ -131,6 +134,33 @@ namespace gpgmm::d3d12 {
         ReturnIfFailed(mDevice->CreateHeap(mHeapDesc, IID_PPV_ARGS(&heap)));
 
         *ppPageableOut = heap.Detach();
+
+        static const HMODULE hMemoryLayer = gpa::secure::LoadLibrarySDL(_T("memory-layer-x64.dll"));
+        if (hMemoryLayer) {
+            static const uint64_t (*pGetInterceptedCallOrdinal)() =
+                (const uint64_t (*)())GetProcAddress(                   hMemoryLayer,
+                                                                        _T("GetInterceptedCallOrdinal"));
+            static const void (*pPushHeap)(gpa::memory_layer::Heap) =
+                (const void (*)(gpa::memory_layer::Heap))GetProcAddress(hMemoryLayer,
+                                                                        _T("PushHeap"));
+            if (pPushHeap) {
+                gpa::memory_layer::Heap h = {
+                    pGetInterceptedCallOrdinal(),
+                    (uint64_t)*ppPageableOut,
+                    mHeapDesc->SizeInBytes,
+                    mHeapDesc->Alignment,
+                    (uint64_t)mHeapDesc->Flags,
+                    __rdtsc(),
+                    GetCurrentThreadId(),
+                    (uint32_t)mHeapDesc->Properties.CreationNodeMask,
+                    (uint32_t)mHeapDesc->Properties.VisibleNodeMask,
+                    (uint8_t)mHeapDesc->Properties.Type,
+                    (uint8_t)mHeapDesc->Properties.CPUPageProperty,
+                    (uint8_t)mHeapDesc->Properties.MemoryPoolPreference,
+                    true}; // internal
+                pPushHeap(h);
+            }
+        }
 
         return S_OK;
     }

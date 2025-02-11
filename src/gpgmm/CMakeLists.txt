@@ -132,7 +132,14 @@ if (GPGMM_ENABLE_VK)
 
 endif()
 
-target_include_directories(gpgmm PUBLIC $<BUILD_INTERFACE:${GPGMM_INCLUDE_DIRS}>)
+target_include_directories(gpgmm PUBLIC 
+    $<BUILD_INTERFACE:${GPGMM_INCLUDE_DIRS}>
+#    "${CMAKE_SOURCE_DIR}/build/"
+#    "${CMAKE_SOURCE_DIR}/src/common/concurrent/include/"
+#    "${CMAKE_SOURCE_DIR}/src/common/utility/include/"
+#    "${CMAKE_SOURCE_DIR}/src/common/instrumentation/include/"
+#    "${CMAKE_SOURCE_DIR}/src/layers/memory/"
+)
 
 ################################################################################
 # Build subdirectories

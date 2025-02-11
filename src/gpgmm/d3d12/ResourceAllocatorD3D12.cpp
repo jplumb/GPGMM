@@ -35,6 +35,8 @@
 #include "gpgmm/d3d12/ResourceHeapAllocatorD3D12.h"
 #include "gpgmm/d3d12/ResourceSizeD3D12.h"
 #include "gpgmm/d3d12/UtilsD3D12.h"
+#include "memory-layer.h"
+#include "instrumentation/gpa-secure.h"
 
 namespace gpgmm::d3d12 {
 
@@ -1411,18 +1413,55 @@ namespace gpgmm::d3d12 {
 
         // Before calling CreatePlacedResource, we must ensure the target heap is resident or
         // CreatePlacedResource will fail.
+        ID3D12Heap* pHeap = nullptr;
         ComPtr<ID3D12Resource> placedResource;
         {
             ComPtr<ID3D12Heap> heap;
             ReturnIfFailed(resourceHeap->QueryInterface(IID_PPV_ARGS(&heap)));
 
             ScopedResidencyLock residencyLock(mResidencyManager.Get(), resourceHeap);
+            pHeap = heap.Get();
             ReturnIfFailed(mDevice->CreatePlacedResource(
-                heap.Get(), resourceOffset, resourceDescriptor, initialResourceState, clearValue,
+                pHeap, resourceOffset, resourceDescriptor, initialResourceState, clearValue,
                 IID_PPV_ARGS(&placedResource)));
         }
 
         *placedResourceOut = placedResource.Detach();
+
+        static const HMODULE hMemoryLayer = gpa::secure::LoadLibrarySDL(_T("memory-layer-x64.dll"));
+        if (hMemoryLayer) {
+            static const uint64_t (*pGetInterceptedCallOrdinal)() =
+                (const uint64_t (*)())GetProcAddress(hMemoryLayer, _T("GetInterceptedCallOrdinal"));
+            static const void (*pPushPlacedAllocation)(gpa::memory_layer::PlacedAllocation) =
+                (const void (*)(gpa::memory_layer::PlacedAllocation))GetProcAddress(
+                    hMemoryLayer, _T("PushPlacedAllocation"));
+            if (pPushPlacedAllocation) {
+                D3D12_RESOURCE_ALLOCATION_INFO allocationInfo =
+                    mDevice->GetResourceAllocationInfo(0, 1, resourceDescriptor);
+                D3D12_GPU_VIRTUAL_ADDRESS gpuVirtualAddress =
+                    (*((ID3D12Resource**)placedResourceOut))->GetGPUVirtualAddress();
+                gpa::memory_layer::PlacedAllocation a = {
+                    pGetInterceptedCallOrdinal(),
+                    (uint64_t)*placedResourceOut,
+                    (uint64_t)resourceDescriptor->Format,
+                    (uint64_t)resourceDescriptor->Layout,
+                    (uint64_t)resourceDescriptor->Dimension,
+                    allocationInfo.Alignment,
+                    allocationInfo.SizeInBytes,
+                    (uint64_t)resourceDescriptor->Width,
+                    (uint64_t)resourceDescriptor->Height,
+                    (uint64_t)resourceDescriptor->DepthOrArraySize,
+                    (uint64_t)resourceDescriptor->MipLevels,
+                    (uint64_t)resourceDescriptor->Flags,
+                    gpuVirtualAddress,
+                    (uint64_t)pHeap, 
+                    (uint64_t)resourceOffset,
+                    (uint64_t)__rdtsc(),
+                    (uint32_t)GetCurrentThreadId(),
+                    true};  // internal
+                pPushPlacedAllocation(a);
+            }
+        }
 
         return S_OK;
     }
@@ -1694,6 +1733,46 @@ namespace gpgmm::d3d12 {
             IID_PPV_ARGS(&committedResource)));
 
         *ppPageableOut = committedResource.Detach();
+
+        static const HMODULE hMemoryLayer = gpa::secure::LoadLibrarySDL(_T("memory-layer-x64.dll"));
+        if (hMemoryLayer) {
+            static const uint64_t (*pGetInterceptedCallOrdinal)() =
+                (const uint64_t (*)())GetProcAddress(hMemoryLayer, _T("GetInterceptedCallOrdinal"));
+            static const void (*pPushCommittedAllocation)(gpa::memory_layer::CommittedAllocation) =
+                (const void (*)(gpa::memory_layer::CommittedAllocation))GetProcAddress(
+                    hMemoryLayer, _T("PushCommittedAllocation"));
+            D3D12_RESOURCE_ALLOCATION_INFO allocationInfo =
+                mDevice->GetResourceAllocationInfo(0, 1, mResourceDescriptor);
+            D3D12_GPU_VIRTUAL_ADDRESS gpuVirtualAddress =
+                (*((ID3D12Resource**)ppPageableOut))->GetGPUVirtualAddress();
+            if (pPushCommittedAllocation) {
+                gpa::memory_layer::CommittedAllocation a = {
+                    pGetInterceptedCallOrdinal(),
+                    (uint64_t)*ppPageableOut, 
+                    (uint64_t)mResourceDescriptor->Format, 
+                    (uint64_t)mResourceDescriptor->Layout, 
+                    (uint64_t)mResourceDescriptor->Dimension, 
+                    allocationInfo.Alignment, 
+                    allocationInfo.SizeInBytes,
+                    (uint64_t)mResourceDescriptor->Width, 
+                    (uint64_t)mResourceDescriptor->Height,
+                    (uint64_t)mResourceDescriptor->DepthOrArraySize, 
+                    (uint64_t)mResourceDescriptor->MipLevels, 
+                    (uint64_t)mResourceDescriptor->Flags, 
+                    gpuVirtualAddress,
+                    (uint64_t)__rdtsc(), 
+                    (uint64_t)mHeapFlags, 
+                    (uint32_t)GetCurrentThreadId(),
+                    (uint32_t)mHeapProperties->CreationNodeMask,
+                    (uint32_t)mHeapProperties->VisibleNodeMask,
+                    (uint8_t)mHeapProperties->Type,
+                    (uint8_t)mHeapProperties->CPUPageProperty,
+                    (uint8_t)mHeapProperties->MemoryPoolPreference,
+                    true};  // internal
+                pPushCommittedAllocation(a);
+            }
+        }
+
         return S_OK;
     }
 
