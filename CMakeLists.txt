@@ -97,6 +97,7 @@ option_if_not_defined(GPGMM_ENABLE_VK "Enable compilation of the Vulkan backend"
 option_if_not_defined(GPGMM_ENABLE_VK_STATIC_FUNCTIONS "Links Vulkan functions by statically importing them" OFF)
 option_if_not_defined(GPGMM_ENABLE_VK_LOADER "Enables compilation of Vulkan loader" ${ENABLE_VK_LOADER})
 option_if_not_defined(GPGMM_ENABLE_VK_USE_SDK "Enable compilation of the Vulkan backend by using the installed Vulkan SDK." OFF)
+option_if_not_defined(GPGMM_INSTRUMENT "Adds GPA FW memory-layer instrumentation" OFF)
 
 set_if_not_defined(GPGMM_THIRD_PARTY_DIR "${GPGMM_SOURCE_DIR}/third_party" "Directory in which to find third-party dependencies.")
 set_if_not_defined(GPGMM_VK_DEPS_DIR "${GPGMM_THIRD_PARTY_DIR}/vulkan-deps" "Directory in which to find vulkan-deps")
