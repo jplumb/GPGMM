@@ -132,14 +132,21 @@ if (GPGMM_ENABLE_VK)
 
 endif()
 
-target_include_directories(gpgmm PUBLIC 
-    $<BUILD_INTERFACE:${GPGMM_INCLUDE_DIRS}>
-#    "${CMAKE_SOURCE_DIR}/build/"
-#    "${CMAKE_SOURCE_DIR}/src/common/concurrent/include/"
-#    "${CMAKE_SOURCE_DIR}/src/common/utility/include/"
-#    "${CMAKE_SOURCE_DIR}/src/common/instrumentation/include/"
-#    "${CMAKE_SOURCE_DIR}/src/layers/memory/"
-)
+if (GPGMM_INSTRUMENT)
+    target_compile_definitions(gpgmm PRIVATE -DINLINE_INSTR=1)
+    target_include_directories(gpgmm PUBLIC 
+        $<BUILD_INTERFACE:${GPGMM_INCLUDE_DIRS}>
+        $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}>/build/
+        $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}>/src/common/concurrent/include/
+        $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}>/src/common/utility/include/
+        $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}>/src/common/instrumentation/include/
+        $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}>/src/layers/memory/
+    )
+else()
+    target_include_directories(gpgmm PUBLIC 
+        $<BUILD_INTERFACE:${GPGMM_INCLUDE_DIRS}>
+    )
+endif()
 
 ################################################################################
 # Build subdirectories
