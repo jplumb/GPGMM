@@ -121,36 +121,62 @@ namespace gpgmm::d3d12 {
             mHeapDesc->Properties.MemoryPoolPreference = D3D12_MEMORY_POOL_UNKNOWN;
         }
 
+#ifdef INLINE_INSTR
+        static const HMODULE hMemoryLayer = gpa::secure::LoadLibrarySDL(_T("memory-layer-x64.dll"));
+        gpa::memory_layer::MemoryInfo sMemInfo = {0};
+        uint64_t TSC = 0;
+        if (hMemoryLayer) {
+            static const uint64_t (*pPre_GetMemInfo)(gpa::memory_layer::MemoryInfo) =
+                (const uint64_t (*)(gpa::memory_layer::MemoryInfo))GetProcAddress(
+                                                                    hMemoryLayer,
+                                                                    _T("Pre_GetMemInfo"));
+            if (pPre_GetMemInfo) {
+                TSC = pPre_GetMemInfo(sMemInfo);
+            }
+        }
+#endif
+
         ComPtr<ID3D12Heap> heap;
         GPGMM_RETURN_IF_FAILED(mDevice->CreateHeap(mHeapDesc, IID_PPV_ARGS(&heap)), mDevice);
 
         *ppPageableOut = heap.Detach();
 #ifdef INLINE_INSTR
-        static const HMODULE hMemoryLayer = gpa::secure::LoadLibrarySDL(_T("memory-layer-x64.dll"));
-        if (hMemoryLayer) {
-            static const uint64_t (*pGetInterceptedCallOrdinal)() =
-                (const uint64_t (*)())GetProcAddress(                   hMemoryLayer,
-                                                                        _T("GetInterceptedCallOrdinal"));
-            static const void (*pPushHeap)(gpa::memory_layer::Heap) =
-                (const void (*)(gpa::memory_layer::Heap))GetProcAddress(hMemoryLayer,
-                                                                        _T("PushHeap"));
-            if (pPushHeap) {
-                gpa::memory_layer::Heap h = {
-                    pGetInterceptedCallOrdinal(),
-                    (uint64_t)*ppPageableOut,
-                    mHeapDesc->SizeInBytes,
-                    mHeapDesc->Alignment,
-                    (uint64_t)mHeapDesc->Flags,
-                    __rdtsc(),
-                    GetCurrentThreadId(),
-                    (uint32_t)mHeapDesc->Properties.CreationNodeMask,
-                    (uint32_t)mHeapDesc->Properties.VisibleNodeMask,
-                    (uint8_t)mHeapDesc->Properties.Type,
-                    (uint8_t)mHeapDesc->Properties.CPUPageProperty,
-                    (uint8_t)mHeapDesc->Properties.MemoryPoolPreference,
-                    true}; // internal
-                pPushHeap(h);
-            }
+        if (!hMemoryLayer) {
+            return S_OK;
+        }
+        static const uint64_t (*pGetInterceptedCallOrdinal)() =
+            (const uint64_t (*)())GetProcAddress(                   hMemoryLayer,
+                                                                    _T("GetInterceptedCallOrdinal"));
+        static const void (*pPushHeap)(gpa::memory_layer::Heap) =
+            (const void (*)(gpa::memory_layer::Heap))GetProcAddress(hMemoryLayer,
+                                                                    _T("PushHeap"));
+        uint64_t callOrdinal = 0;
+        if (pGetInterceptedCallOrdinal) {
+            callOrdinal = pGetInterceptedCallOrdinal();
+        }
+        if (pPushHeap) {
+            gpa::memory_layer::Heap h = {
+                callOrdinal,
+                (uint64_t)*ppPageableOut,
+                mHeapDesc->SizeInBytes,
+                mHeapDesc->Alignment,
+                (uint64_t)mHeapDesc->Flags,
+                TSC,
+                GetCurrentThreadId(),
+                (uint32_t)mHeapDesc->Properties.CreationNodeMask,
+                (uint32_t)mHeapDesc->Properties.VisibleNodeMask,
+                (uint8_t)mHeapDesc->Properties.Type,
+                (uint8_t)mHeapDesc->Properties.CPUPageProperty,
+                (uint8_t)mHeapDesc->Properties.MemoryPoolPreference,
+                true}; // internal
+            pPushHeap(h);
+        }
+        static const uint64_t (*pPost_CallAllocated)(const bool, const TCHAR*, const uint64_t, const uint64_t, const gpa::memory_layer::MemoryInfo, const uint64_t) = 
+            (const uint64_t (*)(const bool, const TCHAR*, const uint64_t, const uint64_t, const gpa::memory_layer::MemoryInfo, const uint64_t))
+            GetProcAddress(hMemoryLayer, _T("Post_CallAllocated"));
+        if (pPost_CallAllocated) {
+            const TCHAR* const name = _T("ID3D12Device::CreateHeap");
+            pPost_CallAllocated(true, name, callOrdinal, TSC, sMemInfo, (uint64_t)*ppPageableOut);
         }
 #endif
         return S_OK;
