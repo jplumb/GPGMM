@@ -1615,14 +1615,14 @@ namespace gpgmm::d3d12 {
 
 #ifdef INLINE_INSTR
         static const HMODULE hMemoryLayer = gpa::secure::LoadLibrarySDL(_T("memory-layer-x64.dll"));
-        gpa::memory_layer::MemoryInfo sMemInfo = {0};
+        gpa::memory_layer::MemoryUsage sMemUsage = {0};
         uint64_t TSC = 0;
         if (hMemoryLayer) {
-            static const uint64_t (*pPre_GetMemInfo)(gpa::memory_layer::MemoryInfo) =
-                (const uint64_t (*)(gpa::memory_layer::MemoryInfo))GetProcAddress(
-                    hMemoryLayer, _T("Pre_GetMemInfo"));
-            if (pPre_GetMemInfo) {
-                TSC = pPre_GetMemInfo(sMemInfo);
+            static const uint64_t (*pPre_GetMemUsage)(gpa::memory_layer::MemoryUsage) =
+                (const uint64_t (*)(gpa::memory_layer::MemoryUsage))GetProcAddress(
+                    hMemoryLayer, _T("Pre_GetMemUsage"));
+            if (pPre_GetMemUsage) {
+                TSC = pPre_GetMemUsage(sMemUsage);
             }
         }
 #endif
@@ -1686,15 +1686,15 @@ namespace gpgmm::d3d12 {
         }
         static const uint64_t (*pPost_CallAllocated)(
             const bool, const TCHAR*, const uint64_t, const uint64_t,
-            const gpa::memory_layer::MemoryInfo, const uint64_t) =
+            const gpa::memory_layer::MemoryUsage, const uint64_t) =
                 (const uint64_t (*)(const bool, const TCHAR*, const uint64_t, const uint64_t,
-                                const gpa::memory_layer::MemoryInfo,
+                                const gpa::memory_layer::MemoryUsage,
                                 const uint64_t))
                 GetProcAddress(hMemoryLayer,
                                _T("Post_CallAllocated"));
         if (pPost_CallAllocated) {
             const TCHAR* const name = _T("ID3D12Device::CreatePlacedResource");
-            pPost_CallAllocated(true, name, callOrdinal, TSC, sMemInfo, (uint64_t)*placedResourceOut);
+            pPost_CallAllocated(true, name, callOrdinal, TSC, sMemUsage, (uint64_t)*placedResourceOut);
         }
 #endif
         return S_OK;
@@ -2003,14 +2003,14 @@ namespace gpgmm::d3d12 {
 
 #ifdef INLINE_INSTR
         static const HMODULE hMemoryLayer = gpa::secure::LoadLibrarySDL(_T("memory-layer-x64.dll"));
-        gpa::memory_layer::MemoryInfo sMemInfo = {0};
+        gpa::memory_layer::MemoryUsage sMemUsage = {0};
         uint64_t TSC = 0;
         if (hMemoryLayer) {
-            static const uint64_t (*pPre_GetMemInfo)(gpa::memory_layer::MemoryInfo) =
-                (const uint64_t (*)(gpa::memory_layer::MemoryInfo))GetProcAddress(
-                    hMemoryLayer, _T("Pre_GetMemInfo"));
-            if (pPre_GetMemInfo) {
-                TSC = pPre_GetMemInfo(sMemInfo);
+            static const uint64_t (*pPre_GetMemUsage)(gpa::memory_layer::MemoryUsage) =
+                (const uint64_t (*)(gpa::memory_layer::MemoryUsage))GetProcAddress(
+                    hMemoryLayer, _T("Pre_GetMemUsage"));
+            if (pPre_GetMemUsage) {
+                TSC = pPre_GetMemUsage(sMemUsage);
             }
         }
 #endif
@@ -2068,15 +2068,15 @@ namespace gpgmm::d3d12 {
         }
         static const uint64_t (*pPost_CallAllocated)(
             const bool, const TCHAR*, const uint64_t, const uint64_t,
-            const gpa::memory_layer::MemoryInfo, const uint64_t) =
+            const gpa::memory_layer::MemoryUsage, const uint64_t) =
                 (const uint64_t (*)(const bool, const TCHAR*, const uint64_t, const uint64_t,
-                                const gpa::memory_layer::MemoryInfo,
+                                const gpa::memory_layer::MemoryUsage,
                                 const uint64_t))
                 GetProcAddress(hMemoryLayer,
                                _T("Post_CallAllocated"));
         if (pPost_CallAllocated) {
             const TCHAR* const name = _T("ID3D12Device::CreateCommittedResource");
-            pPost_CallAllocated(true, name, callOrdinal, TSC, sMemInfo, (uint64_t)*ppPageableOut);
+            pPost_CallAllocated(true, name, callOrdinal, TSC, sMemUsage, (uint64_t)*ppPageableOut);
         }
 #endif
         return S_OK;
