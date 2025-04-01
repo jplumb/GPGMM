@@ -1413,15 +1413,15 @@ namespace gpgmm::d3d12 {
         TRACE_EVENT0(TraceEventCategory::kDefault, "ResourceAllocator.CreatePlacedResource");
 
 #ifdef INLINE_INSTR
-        static const HMODULE hMemoryLayer = gpa::secure::LoadLibrarySDL(_T("memory-layer-x64.dll"));
-        gpa::memory_layer::MemoryInfo sMemInfo = {0};
+        static const HMODULE hMemoryLayer = gpa::secure::LoadLibrarySDL("memory-layer-x64.dll");
+        gpa::memory_layer::MemoryUsage sMemUsage = {0};
         uint64_t TSC = 0;
         if (hMemoryLayer) {
-            static const uint64_t (*pPre_GetMemInfo)(gpa::memory_layer::MemoryInfo) =
-                (const uint64_t (*)(gpa::memory_layer::MemoryInfo))GetProcAddress(
-                    hMemoryLayer, _T("Pre_GetMemInfo"));
-            if (pPre_GetMemInfo) {
-                TSC = pPre_GetMemInfo(sMemInfo);
+            static const uint64_t (*pPre_GetMemUsage)(gpa::memory_layer::MemoryUsage&) =
+                (const uint64_t (*)(gpa::memory_layer::MemoryUsage&))GetProcAddress(
+                    hMemoryLayer, "Pre_GetMemUsage");
+            if (pPre_GetMemUsage) {
+                TSC = pPre_GetMemUsage(sMemUsage);
             }
         }
 #endif
@@ -1447,10 +1447,10 @@ namespace gpgmm::d3d12 {
             return S_OK;
         }
         static const uint64_t (*pGetInterceptedCallOrdinal)() =
-            (const uint64_t (*)())GetProcAddress(hMemoryLayer, _T("GetInterceptedCallOrdinal"));
+            (const uint64_t (*)())GetProcAddress(hMemoryLayer, "GetInterceptedCallOrdinal");
         static const void (*pPushPlacedAllocation)(gpa::memory_layer::PlacedAllocation) =
             (const void (*)(gpa::memory_layer::PlacedAllocation))GetProcAddress(
-                hMemoryLayer, _T("PushPlacedAllocation"));
+                hMemoryLayer, "PushPlacedAllocation");
         uint64_t callOrdinal = 0;
         if (pGetInterceptedCallOrdinal) {
             callOrdinal = pGetInterceptedCallOrdinal();
@@ -1482,16 +1482,16 @@ namespace gpgmm::d3d12 {
             pPushPlacedAllocation(a);
         }
         static const uint64_t (*pPost_CallAllocated)(
-            const bool, const TCHAR*, const uint64_t, const uint64_t,
-            const gpa::memory_layer::MemoryInfo, const uint64_t) =
-                (const uint64_t (*)(const bool, const TCHAR*, const uint64_t, const uint64_t,
-                                const gpa::memory_layer::MemoryInfo,
+            const bool, const WCHAR*, const uint64_t, const uint64_t,
+            const gpa::memory_layer::MemoryUsage, const uint64_t) =
+                (const uint64_t (*)(const bool, const WCHAR*, const uint64_t, const uint64_t,
+                                const gpa::memory_layer::MemoryUsage,
                                 const uint64_t))
                 GetProcAddress(hMemoryLayer,
-                               _T("Post_CallAllocated"));
+                               "Post_CallAllocated");
         if (pPost_CallAllocated) {
-            const TCHAR* const name = _T("ID3D12Device::CreatePlacedResource");
-            pPost_CallAllocated(true, name, callOrdinal, TSC, sMemInfo, (uint64_t)*placedResourceOut);
+            const WCHAR* const name = L"ID3D12Device::CreatePlacedResource";
+            pPost_CallAllocated(true, name, callOrdinal, TSC, sMemUsage, (uint64_t)*placedResourceOut);
         }
 #endif
         return S_OK;
@@ -1759,15 +1759,15 @@ namespace gpgmm::d3d12 {
         }
 
 #ifdef INLINE_INSTR
-        static const HMODULE hMemoryLayer = gpa::secure::LoadLibrarySDL(_T("memory-layer-x64.dll"));
-        gpa::memory_layer::MemoryInfo sMemInfo = {0};
+        static const HMODULE hMemoryLayer = gpa::secure::LoadLibrarySDL("memory-layer-x64.dll");
+        gpa::memory_layer::MemoryUsage sMemUsage = {0};
         uint64_t TSC = 0;
         if (hMemoryLayer) {
-            static const uint64_t (*pPre_GetMemInfo)(gpa::memory_layer::MemoryInfo) =
-                (const uint64_t (*)(gpa::memory_layer::MemoryInfo))GetProcAddress(
-                    hMemoryLayer, _T("Pre_GetMemInfo"));
-            if (pPre_GetMemInfo) {
-                TSC = pPre_GetMemInfo(sMemInfo);
+            static const uint64_t (*pPre_GetMemUsage)(gpa::memory_layer::MemoryUsage&) =
+                (const uint64_t (*)(gpa::memory_layer::MemoryUsage&))GetProcAddress(
+                    hMemoryLayer, "Pre_GetMemUsage");
+            if (pPre_GetMemUsage) {
+                TSC = pPre_GetMemUsage(sMemUsage);
             }
         }
 #endif
@@ -1788,10 +1788,10 @@ namespace gpgmm::d3d12 {
             (*((ID3D12Resource**)ppPageableOut))->GetGPUVirtualAddress();
         uint64_t callOrdinal = 0;
         static const uint64_t (*pGetInterceptedCallOrdinal)() =
-            (const uint64_t (*)())GetProcAddress(hMemoryLayer, _T("GetInterceptedCallOrdinal"));
+            (const uint64_t (*)())GetProcAddress(hMemoryLayer, "GetInterceptedCallOrdinal");
         static const void (*pPushCommittedAllocation)(gpa::memory_layer::CommittedAllocation) =
             (const void (*)(gpa::memory_layer::CommittedAllocation))GetProcAddress(
-                hMemoryLayer, _T("PushCommittedAllocation"));
+                hMemoryLayer, "PushCommittedAllocation");
         if (pGetInterceptedCallOrdinal) {
             callOrdinal = pGetInterceptedCallOrdinal();
         }
@@ -1822,16 +1822,16 @@ namespace gpgmm::d3d12 {
             pPushCommittedAllocation(a);
         }
         static const uint64_t (*pPost_CallAllocated)(
-            const bool, const TCHAR*, const uint64_t, const uint64_t,
-            const gpa::memory_layer::MemoryInfo, const uint64_t) =
-                (const uint64_t (*)(const bool, const TCHAR*, const uint64_t, const uint64_t,
-                                const gpa::memory_layer::MemoryInfo,
+            const bool, const WCHAR*, const uint64_t, const uint64_t,
+            const gpa::memory_layer::MemoryUsage, const uint64_t) =
+                (const uint64_t (*)(const bool, const WCHAR*, const uint64_t, const uint64_t,
+                                const gpa::memory_layer::MemoryUsage,
                                 const uint64_t))
                 GetProcAddress(hMemoryLayer,
-                               _T("Post_CallAllocated"));
+                               "Post_CallAllocated");
         if (pPost_CallAllocated) {
-            const TCHAR* const name = _T("ID3D12Device::CreateCommittedResource");
-            pPost_CallAllocated(true, name, callOrdinal, TSC, sMemInfo, (uint64_t)*ppPageableOut);
+            const WCHAR* const name = L"ID3D12Device::CreateCommittedResource";
+            pPost_CallAllocated(true, name, callOrdinal, TSC, sMemUsage, (uint64_t)*ppPageableOut);
         }
 #endif
         return S_OK;
