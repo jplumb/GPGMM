@@ -35,7 +35,7 @@
 #include "gpgmm/d3d12/ResourceHeapAllocatorD3D12.h"
 #include "gpgmm/d3d12/ResourceSizeD3D12.h"
 #include "gpgmm/d3d12/UtilsD3D12.h"
-#ifdef INLINE_INSTR
+#if defined INLINE_INSTR && _WIN32
 #include "memory-layer.h"
 #include "instrumentation/gpa-secure.h"
 #endif
@@ -1412,7 +1412,7 @@ namespace gpgmm::d3d12 {
                                                     ID3D12Resource** placedResourceOut) {
         TRACE_EVENT0(TraceEventCategory::kDefault, "ResourceAllocator.CreatePlacedResource");
 
-#ifdef INLINE_INSTR
+#if defined INLINE_INSTR && _WIN32
         static const HMODULE hMemoryLayer = gpa::secure::LoadLibrarySDL("memory-layer-x64.dll");
         gpa::memory_layer::MemoryUsage sMemUsage = {0};
         uint64_t TSC = 0;
@@ -1442,7 +1442,7 @@ namespace gpgmm::d3d12 {
         }
 
         *placedResourceOut = placedResource.Detach();
-#ifdef INLINE_INSTR
+#if defined INLINE_INSTR && _WIN32
         if (!hMemoryLayer) {
             return S_OK;
         }
@@ -1758,7 +1758,7 @@ namespace gpgmm::d3d12 {
             mHeapProperties->MemoryPoolPreference = D3D12_MEMORY_POOL_UNKNOWN;
         }
 
-#ifdef INLINE_INSTR
+#if defined INLINE_INSTR && _WIN32
         static const HMODULE hMemoryLayer = gpa::secure::LoadLibrarySDL("memory-layer-x64.dll");
         gpa::memory_layer::MemoryUsage sMemUsage = {0};
         uint64_t TSC = 0;
@@ -1778,7 +1778,7 @@ namespace gpgmm::d3d12 {
             IID_PPV_ARGS(&committedResource)));
 
         *ppPageableOut = committedResource.Detach();
-#ifdef INLINE_INSTR
+#if defined INLINE_INSTR && _WIN32
         if (!hMemoryLayer) {
             return S_OK;
         }

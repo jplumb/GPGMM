@@ -24,7 +24,7 @@
 #include "gpgmm/d3d12/UtilsD3D12.h"
 #include "gpgmm/utils/Limits.h"
 #include "gpgmm/utils/Math.h"
-#ifdef INLINE_INSTR
+#if defined INLINE_INSTR && defined _WIN32
 #include "memory-layer.h"
 #include "instrumentation/gpa-secure.h"
 #endif
@@ -130,7 +130,7 @@ namespace gpgmm::d3d12 {
             mHeapDesc->Properties.MemoryPoolPreference = D3D12_MEMORY_POOL_UNKNOWN;
         }
 
-#ifdef INLINE_INSTR
+#if defined INLINE_INSTR && defined _WIN32
         static const HMODULE hMemoryLayer = gpa::secure::LoadLibrarySDL("memory-layer-x64.dll");
         gpa::memory_layer::MemoryUsage sMemUsage = {0};
         uint64_t TSC = 0;
@@ -149,7 +149,7 @@ namespace gpgmm::d3d12 {
         ReturnIfFailed(mDevice->CreateHeap(mHeapDesc, IID_PPV_ARGS(&heap)));
 
         *ppPageableOut = heap.Detach();
-#ifdef INLINE_INSTR
+#if defined INLINE_INSTR && defined _WIN32
         if (hMemoryLayer) {
             static const uint64_t (*pGetInterceptedCallOrdinal)() =
                 (const uint64_t (*)())GetProcAddress(hMemoryLayer, "GetInterceptedCallOrdinal");
